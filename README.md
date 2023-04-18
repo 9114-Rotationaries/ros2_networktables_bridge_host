@@ -11,6 +11,7 @@ ros_networktables_bridge_host is a ROS package that bridges ROS (Robot Operating
 # Prerequisites
 
 - ROS environment setup (tested with ROS Noetic)
+- rosbridge_library: (Install this ROS package: https://github.com/RobotWebTools/rosbridge_suite/tree/ros1)
 
 # Installation
 
