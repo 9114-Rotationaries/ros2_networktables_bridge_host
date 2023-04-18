@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<launch>
-    <node name="ros_networktables_bridge" pkg="ros_networktables_bridge_host" type="ros_networktables_bridge_node.py" output="screen" required="false"/>
-</launch>
