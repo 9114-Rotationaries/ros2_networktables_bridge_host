@@ -11,7 +11,6 @@ from ros_conversions import (
     ros_msg_to_string_json,
     string_json_to_ros_msg,
     parse_nt_topic,
-    convert_to_nt_topic,
 )
 from generic_message_subscriber import GenericMessageSubscriber
 
@@ -56,8 +55,12 @@ class ROSNetworkTablesBridge:
         # Get NetworkTables subtables
         self.ros_to_nt_subtable: NetworkTable = NetworkTables.getTable(ros_to_nt_key)
         self.nt_to_ros_subtable: NetworkTable = NetworkTables.getTable(nt_to_ros_key)
-        self.ros_to_nt_topic_requests_entry: NetworkTableEntry = self.ros_to_nt_subtable.getEntry(topics_request_key)
-        self.nt_to_ros_topic_requests_entry: NetworkTableEntry = self.nt_to_ros_subtable.getEntry(topics_request_key)
+        self.ros_to_nt_topic_requests_entry: NetworkTableEntry = (
+            self.ros_to_nt_subtable.getEntry(topics_request_key)
+        )
+        self.nt_to_ros_topic_requests_entry: NetworkTableEntry = (
+            self.nt_to_ros_subtable.getEntry(topics_request_key)
+        )
 
         # Initialize dictionaries and sets for publishers, subscribers, and keys
         self.publishers: Dict[str, rospy.Publisher] = {}
@@ -145,7 +148,7 @@ class ROSNetworkTablesBridge:
 
         # convert to absolute topic
         topic_name = self.get_absolute_topic(topic_name)
-        
+
         return topic_name
 
     def nt_to_ros_callback(
@@ -183,11 +186,11 @@ class ROSNetworkTablesBridge:
                 f"Exception in nt_to_ros_callback: {e}. Received value: {value}",
                 exc_info=e,
             )
-    
+
     def unregister_publisher(self, nt_key: str) -> None:
         """
         Unregister a publisher by NetworkTables entry key.
-        
+
         :param nt_key: NetworkTables entry key that points to a publisher
         """
         rospy.loginfo(f"Unregistering publish topic {nt_key}")
@@ -200,7 +203,7 @@ class ROSNetworkTablesBridge:
     def unregister_subscriber(self, nt_key: str) -> None:
         """
         Unregister a subscriber by NetworkTables entry key.
-        
+
         :param nt_key: NetworkTables entry key that points to a subscriber
         """
         rospy.loginfo(f"Unregistering subscribe topic {nt_key}")
@@ -213,7 +216,7 @@ class ROSNetworkTablesBridge:
     def get_new_keys(self, local_keys: Set[str], remote_keys: Set[str]) -> Set[str]:
         """
         Comparing local NetworkTables keys and remote NetworkTables keys, get the keys that are new
-        
+
         :return: Set of new keys
         """
         return remote_keys.difference(local_keys)
@@ -221,7 +224,7 @@ class ROSNetworkTablesBridge:
     def get_removed_keys(self, local_keys: Set[str], remote_keys: Set[str]) -> Set[str]:
         """
         Comparing local NetworkTables keys and remote NetworkTables keys, get the keys that were removed
-        
+
         :return: Set of revmoed keys
         """
         return local_keys.difference(remote_keys)
@@ -229,7 +232,7 @@ class ROSNetworkTablesBridge:
     def get_topic_requests(self, topic_requests_entry: NetworkTableEntry) -> Set[str]:
         """
         Get a set of topics from the supplied topic requests entry.
-        
+
         :return: Set of requested topic keys
         """
         return set(topic_requests_entry.getStringArray([]))
@@ -257,27 +260,29 @@ class ROSNetworkTablesBridge:
 
             # create an entry listener for the new topic.
             new_pub_entry = self.nt_to_ros_subtable.getEntry(new_pub_key)
-            handle = new_pub_entry.addListener(self.nt_to_ros_callback, NotifyFlags.UPDATE)
+            handle = new_pub_entry.addListener(
+                self.nt_to_ros_callback, NotifyFlags.UPDATE
+            )
             self.pub_listen_handles[new_pub_key] = handle
 
             # forcefully call the callback since this is the first update
             self.nt_to_ros_callback(
                 new_pub_entry, new_pub_key, new_pub_entry.getString(""), True
             )
-    
+
     def check_removed_pub_keys(self, removed_pub_keys: Set[str]) -> None:
         for removed_pub_key in removed_pub_keys:
             # if the topic was already removed, skip it
             if removed_pub_key not in self.pub_listen_keys:
                 continue
-            
+
             # Remove from initialized keys
             self.pub_listen_keys.remove(removed_pub_key)
-            
+
             removed_pub_entry = self.nt_to_ros_subtable.getEntry(removed_pub_key)
             removed_pub_entry.removeListener(self.pub_listen_handles[removed_pub_key])
             del self.pub_listen_handles[removed_pub_key]
-            
+
             self.unregister_publisher(removed_pub_key)
             print("self.pub_listen_keys", self.pub_listen_keys)
 
@@ -298,10 +303,10 @@ class ROSNetworkTablesBridge:
             # if the topic was already removed, skip it
             if removed_sub_key not in self.sub_listen_keys:
                 continue
-            
+
             # Remove from initialized keys
             self.sub_listen_keys.remove(removed_sub_key)
-            
+
             self.unregister_subscriber(removed_sub_key)
             print("self.sub_listen_keys", self.sub_listen_keys)
 
@@ -319,22 +324,31 @@ class ROSNetworkTablesBridge:
             rate.sleep()
 
             # get new publisher topics requested by the NT client
-            pub_topic_requests = self.get_topic_requests(self.nt_to_ros_topic_requests_entry)
+            pub_topic_requests = self.get_topic_requests(
+                self.nt_to_ros_topic_requests_entry
+            )
             new_pub_keys = self.get_new_keys(self.pub_listen_keys, pub_topic_requests)
             self.check_new_pub_keys(new_pub_keys)
 
             # get removed publisher topics requested by the NT client
-            removed_pub_keys = self.get_removed_keys(self.pub_listen_keys, pub_topic_requests)
+            removed_pub_keys = self.get_removed_keys(
+                self.pub_listen_keys, pub_topic_requests
+            )
             self.check_removed_pub_keys(removed_pub_keys)
-            
+
             # get new subscriber topics requested by the NT client
-            sub_topic_requests = self.get_topic_requests(self.ros_to_nt_topic_requests_entry)
+            sub_topic_requests = self.get_topic_requests(
+                self.ros_to_nt_topic_requests_entry
+            )
             new_sub_keys = self.get_new_keys(self.sub_listen_keys, sub_topic_requests)
             self.check_new_sub_keys(new_sub_keys)
-            
+
             # get removed subscriber topics requested by the NT client
-            removed_sub_keys = self.get_removed_keys(self.sub_listen_keys, sub_topic_requests)
+            removed_sub_keys = self.get_removed_keys(
+                self.sub_listen_keys, sub_topic_requests
+            )
             self.check_removed_sub_keys(removed_sub_keys)
+
 
 if __name__ == "__main__":
     bridge = ROSNetworkTablesBridge()
