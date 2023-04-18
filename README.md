@@ -11,8 +11,16 @@ ros_networktables_bridge_host is a ROS package that bridges ROS (Robot Operating
 # Prerequisites
 
 - ROS environment setup (tested with ROS Noetic)
+- rosbridge_library
 
 # Installation
+
+- Install rosbridge_suite dependency
+    - If you're on Ubuntu 20, run `sudo apt-get install ros-noetic-rosbridge-suite`
+    - Otherwise, clone it into your workspace:
+```bash
+git clone https://github.com/RobotWebTools/rosbridge_suite.git -b ros1
+```
 
 - Clone into your catkin workspace:
 
