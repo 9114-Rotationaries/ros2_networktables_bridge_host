@@ -132,7 +132,7 @@ class ROSNetworkTablesBridge:
             self.unregister_publisher(nt_key)
 
         # create ROS publisher using message type received from NT
-        pub = rospy.Publisher(topic_name, ros_msg_type, queue_size=self.queue_size)
+        pub = rospy.Publisher(topic_name, ros_msg_type, queue_size=self.queue_size, latch=True)
 
         # add to dictionary of publishers
         self.publishers[nt_key] = pub
@@ -265,11 +265,6 @@ class ROSNetworkTablesBridge:
             )
             self.pub_listen_handles[new_pub_key] = handle
 
-            # forcefully call the callback since this is the first update
-            self.nt_to_ros_callback(
-                new_pub_entry, new_pub_key, new_pub_entry.getString(""), True
-            )
-
     def check_removed_pub_keys(self, removed_pub_keys: Set[str]) -> None:
         for removed_pub_key in removed_pub_keys:
             # if the topic was already removed, skip it
@@ -284,7 +279,6 @@ class ROSNetworkTablesBridge:
             del self.pub_listen_handles[removed_pub_key]
 
             self.unregister_publisher(removed_pub_key)
-            print("self.pub_listen_keys", self.pub_listen_keys)
 
     def check_new_sub_keys(self, new_sub_keys: Set[str]) -> None:
         for new_sub_key in new_sub_keys:
@@ -308,7 +302,6 @@ class ROSNetworkTablesBridge:
             self.sub_listen_keys.remove(removed_sub_key)
 
             self.unregister_subscriber(removed_sub_key)
-            print("self.sub_listen_keys", self.sub_listen_keys)
 
     def run(self):
         """
