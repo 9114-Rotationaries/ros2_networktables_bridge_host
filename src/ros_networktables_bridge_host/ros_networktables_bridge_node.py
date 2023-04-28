@@ -265,6 +265,11 @@ class ROSNetworkTablesBridge:
             )
             self.pub_listen_handles[new_pub_key] = handle
 
+            # forcefully call the callback since this is the first update
+            self.nt_to_ros_callback(
+                new_pub_entry, new_pub_key, new_pub_entry.getString(""), True
+            )
+
     def check_removed_pub_keys(self, removed_pub_keys: Set[str]) -> None:
         for removed_pub_key in removed_pub_keys:
             # if the topic was already removed, skip it
