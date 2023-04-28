@@ -39,6 +39,7 @@ class ROSNetworkTablesBridge:
         self.queue_size = int(rospy.get_param("~queue_size", 10))
         self.nt_warmup_time = float(rospy.get_param("~nt_warmup_time", 2.0))
         self.publish_warmup_time = rospy.Duration(rospy.get_param("~publish_warmup_time", 2.0))
+        self.publisher_non_empty_timeout = rospy.Duration(rospy.get_param("~publisher_non_empty_timeout", 0.25))
         ros_to_nt_key = str(rospy.get_param("~ros_to_nt_table_key", "ros_to_nt"))
         nt_to_ros_key = str(rospy.get_param("~nt_to_ros_table_key", "nt_to_ros"))
         topics_request_key = str(rospy.get_param("~topics_request_key", "@topics"))
@@ -295,6 +296,15 @@ class ROSNetworkTablesBridge:
         else:
             return self.namespace + topic_name
 
+    def wait_for_non_empty(self, entry: NetworkTableEntry) -> str:
+        start_time = rospy.Time.now()
+        value = ""
+        while len(value) == 0:
+            if rospy.is_shutdown() or rospy.Time.now() - start_time > self.publisher_non_empty_timeout:
+                return ""
+            value = entry.getString("")
+        return value
+
     def check_new_pub_keys(self, new_pub_keys: Set[str]) -> None:
         for new_pub_key in new_pub_keys:
             # if there's already an entry listener for this new topic, skip it
@@ -307,7 +317,7 @@ class ROSNetworkTablesBridge:
             # forcefully call the callback since this is the first update
             new_pub_entry = self.nt_to_ros_subtable.getEntry(new_pub_key)
             self.nt_to_ros_callback(
-                new_pub_entry, new_pub_key, new_pub_entry.getString(""), True
+                new_pub_entry, new_pub_key, self.wait_for_non_empty(new_pub_entry), True
             )
 
             # create an entry listener for the new topic.
