@@ -21,13 +21,24 @@ def string_json_to_msg_dict(msg_json: str):
     return json.loads(msg_json)
 
 
-def remove_type_fields(msg_dict):
+def remove_type_fields(msg_dict: dict):
     new_dict = {}
     for key in msg_dict.keys():
         if key == "_type":
             continue
         elif type(msg_dict[key]) == dict:
             new_dict[key] = remove_type_fields(msg_dict[key])
+        elif type(msg_dict[key]) == list:
+            new_dict[key] = []
+            if len(msg_dict[key]) > 0:
+                # ROS arrays are all the same type. Only check the first value if it has a _type field
+                first_value = msg_dict[key][0]
+                if type(first_value) == dict:
+                    for value in msg_dict[key]:
+                        assert type(value) == dict, value
+                        new_dict[key].append(remove_type_fields(value))
+                else:
+                    new_dict[key] = msg_dict[key]
         else:
             new_dict[key] = msg_dict[key]
     return new_dict
