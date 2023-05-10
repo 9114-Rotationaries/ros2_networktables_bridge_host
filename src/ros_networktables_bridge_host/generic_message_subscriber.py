@@ -14,6 +14,6 @@ class GenericMessageSubscriber:
         msg_class = get_msg_class(self.class_map, data._connection_header["type"])
         msg = msg_class().deserialize(data._buff)
         self._callback(msg)
-        
+
     def unregister(self):
         self._binary_sub.unregister()
