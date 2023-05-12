@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 from typing import Any, Dict, Optional, Set
 import rospy
 from networktables import (
@@ -432,11 +433,10 @@ class ROSNetworkTablesBridge:
                 no_entries_timer = rospy.Time.now()
             else:
                 if rospy.Time.now() - no_entries_timer > self.no_data_timeout:
-                    rospy.logwarn(
-                        f"No data received for {self.no_data_timeout.to_sec()} seconds. Restarting NT."
+                    rospy.logerr(
+                        f"No data received for {self.no_data_timeout.to_sec()} seconds. Exiting."
                     )
-                    no_entries_timer = rospy.Time.now()
-                    self.reopen()
+                    sys.exit(1)
 
             # get new publisher topics requested by the NT client
             pub_topic_requests = self.get_topic_requests(
