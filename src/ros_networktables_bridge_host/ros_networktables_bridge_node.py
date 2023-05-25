@@ -49,6 +49,7 @@ class ROSNetworkTablesBridge:
         self.ros_to_nt_key = str(rospy.get_param("~ros_to_nt_table_key", "ros_to_nt"))
         self.nt_to_ros_key = str(rospy.get_param("~nt_to_ros_table_key", "nt_to_ros"))
         self.topics_request_key = str(rospy.get_param("~topics_request_key", "@topics"))
+        self.time_sync_key = str(rospy.get_param("~time_sync_key", "@time"))
 
         self.open()
 
@@ -97,6 +98,9 @@ class ROSNetworkTablesBridge:
         self.nt_to_ros_topic_requests_table: NetworkTable = (
             self.nt_to_ros_subtable.getSubTable(self.topics_request_key)
         )
+        self.time_sync_entry: NetworkTableEntry = self.ros_to_nt_subtable.getEntry(
+            self.time_sync_key
+        )
 
     def close(self):
         # Shutdown NetworkTables connection
@@ -111,6 +115,10 @@ class ROSNetworkTablesBridge:
         rospy.sleep(0.25)
         self.open()
         rospy.sleep(self.nt_warmup_time)
+
+    def update_time_sync(self):
+        # Update time sync entry with current local time
+        self.time_sync_entry.setDouble(rospy.Time.now().to_sec())
 
     def has_entries(self):
         # Are there any entries or subtables in the ROS <-> NT tables
@@ -428,6 +436,9 @@ class ROSNetworkTablesBridge:
         while not rospy.is_shutdown():
             # sleep by the specified rate
             rate.sleep()
+
+            # push local time to NT
+            self.update_time_sync()
 
             if self.has_entries():
                 no_entries_timer = rospy.Time.now()
