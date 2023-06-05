@@ -58,7 +58,7 @@ pip3 install -r requirements.txt
 </launch>
 ```
 
-    - This is an example where the team number is `88`
+- This is an example where the team number is `88`
 
 - Launch the node: `roslaunch path/to/your/file.launch`
 
