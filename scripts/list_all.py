@@ -54,14 +54,19 @@ def recurse_nt(data: ConvertedTable, current_path: str, table: NetworkTable):
             value,
         )
     for key in table.getSubTables():
-        next_path = current_path + "/" + key
+        if current_path == "/":
+            next_path = current_path + key
+        else:
+            next_path = current_path + "/" + key
+        if len(next_path.strip("/")) == 0:
+            continue
         recurse_nt(data, next_path, table.getSubTable(key))
 
 
 def get_full_table(root_table: NetworkTable) -> ConvertedTable:
     table: ConvertedTable = {}
     path = root_table.getPath()
-    if path.endswith("/"):
+    if path.endswith("/") and len(path) > 1:
         path = path[:-1]
     recurse_nt(table, path, root_table)
     return table
@@ -79,10 +84,19 @@ def main():
     NetworkTables.startClient((address, port))
     time.sleep(2.0)
 
-    table = NetworkTables.getTable("")
+    table = NetworkTables.getTable("/")
+
+    start_time = time.time()
+    while len(table.getSubTables()) == 0 and len(table.getKeys()) == 0:
+        time.sleep(0.1)
+        if time.time() - start_time > 5.0:
+            raise RuntimeError("Timed out waiting for NT entries")
 
     backup = get_full_table(table)
     pprint(backup)
+
+    NetworkTables.stopClient()
+    NetworkTables.shutdown()
 
 
 if __name__ == "__main__":
