@@ -11,7 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
     ],
-    install_requires=['setuptools', 'rclpy'],
+    install_requires=['setuptools', 'rclpy', 'pynetworktables'],
     zip_safe=True,
     maintainer='woz4tetra',
     maintainer_email='woz4tetra@gmail.com',
