@@ -1,4 +1,4 @@
-import rospy
+import rclpy
 import json
 from importlib import import_module
 from rosbridge_library.internal import message_conversion
@@ -7,7 +7,7 @@ from roslib.message import get_message_class
 
 def ros_msg_to_msg_dict(msg):
     msg_dict = message_conversion.extract_values(msg)
-    msg_dict["_type"] = getattr(msg, "_type", None)  # type: ignore
+    msg_dict["_type"] = msg._type # fully qualified message type name
     return msg_dict
 
 
@@ -44,17 +44,17 @@ def remove_type_fields(msg_dict: dict):
     return new_dict
 
 
-def msg_dict_to_ros_type(msg_dict):
+def msg_dict_to_ros_type(msg_dict, logger):
     if "_type" not in msg_dict:
-        rospy.logerr("JSON message must include a '_type' field.")
+        logger.error("JSON message must include a '_type' field.")
         return None, None
 
     msg_type = msg_dict["_type"]
     msg_dict = remove_type_fields(msg_dict)
-    ros_msg_type = get_message_class(msg_type)
-
-    if ros_msg_type is None:
-        rospy.logerr("Invalid message type: %s", msg_type)
+    try:
+        ros_msg_type = get_message(msg_type)
+    except Exception as e:
+        logger.error(f"Invalid message type: {msg_type}. Error: {e}")
         return None, None
 
     return ros_msg_type, msg_dict
@@ -67,11 +67,11 @@ def msg_dict_to_ros_msg(msg_dict, msg_cls):
     return msg
 
 
-def string_json_to_ros_msg(string_json: str):
+def string_json_to_ros_msg(string_json: str, logger):
     if len(string_json) == 0:
         return None, None
     msg_dict = string_json_to_msg_dict(string_json)
-    ros_msg_type, msg_dict = msg_dict_to_ros_type(msg_dict)
+    ros_msg_type, msg_dict = msg_dict_to_ros_type(msg_dict, logger)
     if ros_msg_type is None or msg_dict is None:
         return None, None
     ros_msg = msg_dict_to_ros_msg(msg_dict, ros_msg_type)
@@ -86,11 +86,12 @@ def convert_to_nt_topic(ros_topic: str) -> str:
     return ros_topic.replace("/", "\\")
 
 
-def get_msg_class(cache, msg_type_name: str):
+def get_msg_class(cache, msg_type_name: str, logger):
     if msg_type_name not in cache:
-        connection_header = msg_type_name.split("/")
-        ros_pkg = connection_header[0] + ".msg"
-        msg_type = connection_header[1]
-        msg_class = getattr(import_module(ros_pkg), msg_type)
-        cache[msg_type_name] = msg_class
+        try:
+            msg_class = get_message(msg_type_name)
+            cache[msg_type_name] = msg_class
+        except Exception as e:
+            logger.error(f"Error getting message class for {msg_type_name}: {e}")
+            return None
     return cache[msg_type_name]

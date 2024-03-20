@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>ros_networktables_bridge_host</name>
   <version>0.0.0</version>
   <description>The ros_networktables_bridge_host package</description>
   <maintainer email="woz4tetra@gmail.com">woz4tetra</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>rospy</build_depend>
-  
-  <build_export_depend>rospy</build_export_depend>
-  
-  <exec_depend>rospy</exec_depend>
+  <depend>rclpy</depend>
+  <depend>rosbridge_library</depend>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
   <exec_depend>rosbridge_library</exec_depend>
 </package>
+

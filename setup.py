@@ -1,11 +1,26 @@
-## ! DO NOT MANUALLY INVOKE THIS setup.py, USE CATKIN INSTEAD
-
 from setuptools import setup
-from catkin_pkg.python_setup import generate_distutils_setup
 
-# fetch values from package.xml
-setup_args = generate_distutils_setup(
-    packages=["ros_networktables_bridge_host"], package_dir={"": "src"}
+package_name = 'ros_networktables_bridge_host'
+
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=[package_name],
+    data_files=[
+        ('share/' + package_name, ['package.xml']),
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+    ],
+    install_requires=['setuptools', 'rclpy'],
+    zip_safe=True,
+    maintainer='woz4tetra',
+    maintainer_email='woz4tetra@gmail.com',
+    description='The ros_networktables_bridge_host package',
+    license='MIT',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            # Define console script entry points for your node executables
+        ],
+    },
 )
-
-setup(**setup_args)
